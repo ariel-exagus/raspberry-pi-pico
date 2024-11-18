@@ -104,3 +104,37 @@ $ cd blink
 $ make
 ```
 > Important: In windows Platform, any time you call CMake, you must add '-G "MinGW Makefiles" option to specify the build system.
+
+# Update SDK Raspberry pi pico
+
+## 1- Update SDK Pico
+
+To update de the SDK Pico, you must to go to the SDK pico directory
+
+```
+$ cd <sdk-pico-directory>/pico-sdk
+```
+
+Use `git` to download the last version of the SDK pico from the oficial repository of Raspberry pi in GitHub
+
+```
+git pull origin master
+```
+
+This bring the updating and recents changing in the SDK
+
+## 2- Update Submodules
+
+Some of components of SDK are submodules in git. Make sure that they are updating.
+
+```
+git submodule update --init --recursive
+```
+
+To check the actual version, you can see the log register of repository
+
+```
+git log -1
+```
+
+
