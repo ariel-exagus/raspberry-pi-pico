@@ -17,6 +17,10 @@ $ make
 
 This should build the project-template and generate the .elf, .hex and .uf2 binary files. 
 
+### RP2350 Instructions
+
+The Pico SDK default continues to be to build for RP2040 (PICO_PLATFORM=rp2040), so to build for RP2350, you need to pass `-DPICO_PLATFORM=rp2350` to CMake (or `-DPICO_PLATFORM=rp2350-riscv` for RISC-V).
+
 ## Upload the .uf2 file
 After compile successfully, we can upload the program to our Pico. You have to connect the Pico board in bootloader mode (press and hold the BOOTSEL button while plugging a USB cable into the Pico).
 
