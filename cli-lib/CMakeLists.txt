@@ -1,17 +1,15 @@
 cmake_minimum_required(VERSION 3.12)
-
 # Before use this CMake, you must define the enviroment variable "PICO_SDK_PATH"
 # Include build functions from Pico SDK
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
 # Set name of project (as PROJECT_NAME)
-project(cli-lib-v110 C CXX ASM)
+project(cli-lib-v120 C CXX ASM)
 
 # specify the C standard
 set(CMAKE_C_STANDARD 11)
 # Opcional: Requerir el estándar explícitamente sin permitir extensiones del compilador.
 set(CMAKE_C_STANDARD_REQUIRED true)
-
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
@@ -22,14 +20,35 @@ pico_sdk_init()
 # Add include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# Add all the sources files in src
-file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/src/*.c)
+# Add the sources files of the CLI library
+set(CLI_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/cli.c
+)
 
-# Add main.cpp file
-set(SOURCES ${SOURCES} ${CMAKE_SOURCE_DIR}/main.c)
+# ---------------------------------------------------------------
+# Selección de la implementación HAL según la plataforma target.
+# Descomentar solo UNO de los siguientes bloques:
+# ---------------------------------------------------------------
+
+# --- Raspberry Pi Pico ---
+list(APPEND CLI_SOURCES ${CMAKE_SOURCE_DIR}/src/cli_port_pico.c)
+
+# --- PIC (XC8/XC16) ---
+# list(APPEND CLI_SOURCES ${CMAKE_SOURCE_DIR}/src/cli_port_pic.c)
+
+# --- NetBurner ---
+# list(APPEND CLI_SOURCES ${CMAKE_SOURCE_DIR}/src/cli_port_netburner.c)
+
+# --- PC Linux/Windows (para testing) ---
+# list(APPEND CLI_SOURCES ${CMAKE_SOURCE_DIR}/src/cli_port_pc.c)
+
+# Archivo principal de la aplicación
+set(APP_SOURCES
+    ${CMAKE_SOURCE_DIR}/main.c
+)
 
 # Add the executables
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${CLI_SOURCES} ${APP_SOURCES})
 
 #In windows, use the next command to generate de MakeFile: cmake .. -G "MinGW Makefiles"
 

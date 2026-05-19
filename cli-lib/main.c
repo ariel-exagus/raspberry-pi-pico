@@ -1,88 +1,122 @@
+/*
+ * main.c
+ *
+ * Ejemplo de uso de la librería CLI con Raspberry Pi Pico.
+ * CLI_Task() es no bloqueante: el loop principal puede hacer otras
+ * tareas (blink, sensores, etc.) sin que la CLI los interrumpa.
+ */
+
 #include "cli.h"
-#include "pico/stdlib.h"    //pico libraries
+#include "pico/stdlib.h"
 
-const uint led_pin = 25;    //Pin Led on Raspberry Pi Pico board
+const uint LED_PIN = 25;            /* LED onboard de la Raspberry Pi Pico */
 
-//comandos
+bool led_enable = true;
+
+/* Prototipos de comandos */
 void cmd_hello(int argc, char *argv[]);
 void cmd_echo(int argc, char *argv[]);
 void cmd_cli_version(int argc, char *argv[]);
 void cmd_led(int argc, char *argv[]);
+void cmd_echo_mode(int argc, char *argv[]);
 
-int main()
+int main(void)
 {
-    
+    /* Inicializar GPIO del LED */
+    gpio_init(LED_PIN);
+    gpio_set_dir(LED_PIN, GPIO_OUT);
 
-    // Initialize Pin
-    gpio_init(led_pin);
-    gpio_set_dir(led_pin, GPIO_OUT);
+    /* Inicializar puerto serie (USB-CDC o UART según CMakeLists) */
+    stdio_init_all();
 
-    //Put your setup here
-    //setup();
+    /* Registrar comandos ANTES de llamar CLI_Init() */
+    CLI_RegisterCommand("hello",       cmd_hello,       "Print a test message");
+    CLI_RegisterCommand("echo",        cmd_echo,        "Repeat the arguments provided");
+    CLI_RegisterCommand("cli_version", cmd_cli_version, "Print the CLI version");
+    CLI_RegisterCommand("led",         cmd_led,         "LED control: led <on|off>");
+    CLI_RegisterCommand("echo_mode", cmd_echo_mode, "Enable/disable input echo: echo_mode <on|off>");
 
-    // Initialize chosen serial port
-    stdio_init_all();           //We need to initialized the serial port
-
-    // Registrar comandos
-    CLI_RegisterCommand("hello", cmd_hello, "Print a test message");
-    CLI_RegisterCommand("echo", cmd_echo, "Repeat the arguments provided");
-    // Colocar la lista de comandos propios
-    CLI_RegisterCommand("cli_version", cmd_cli_version, "Prints the CLI version");
-    CLI_RegisterCommand("led", cmd_led, "LED status control (on/off)");
-
-    // Inicializar CLI
+    /* Mostrar banner y lista de comandos */
     CLI_Init();
-    
 
-    // loop forever to blink led
-    while(1)
+    /* Loop principal — ninguna tarea bloquea a las demás */
+    while (1)
     {
-        // Example of Blink LED
-        printf("Template project!\r\n");
-        gpio_put(led_pin, true);
-        sleep_ms(1000);
-        gpio_put(led_pin, false);
-        sleep_ms(1000);
-
-        // Put your code Here
+        /*
+         * CLI_Task() procesa los caracteres disponibles y retorna
+         * inmediatamente si no hay datos. No bloquea el loop.
+         */
         CLI_Task();
+
+        /*
+         * Otras tareas del sistema pueden ejecutarse aquí sin demora.
+         * El blink ya no interfiere con la recepción de comandos.
+         */
+        if(led_enable){
+            gpio_put(LED_PIN, true);
+            sleep_ms(500);
+            gpio_put(LED_PIN, false);
+            sleep_ms(500);
+        }
     }
 
     return 0;
 }
 
-// Ejemplo de comandos
-void cmd_hello(int argc, char *argv[]) {
-    printf("Hello World! - test command\n");
+/* ------------------------------------------------------------------ */
+/*  Implementación de comandos                                          */
+/* ------------------------------------------------------------------ */
+
+void cmd_hello(int argc, char *argv[])
+{
+    printf("Hello, World!\r\n");
 }
 
-void cmd_echo(int argc, char *argv[]) {
+void cmd_echo(int argc, char *argv[])
+{
     for (int i = 1; i < argc; i++) {
         printf("%s ", argv[i]);
     }
-    printf("\n");
+    printf("\r\n");
 }
 
-// Comandos definidos por el usuario
 void cmd_cli_version(int argc, char *argv[])
 {
-    printf("CLI version: v1.1.0\n");
+    printf("CLI version: v1.2.0\r\n");
 }
 
-void cmd_led(int argc, char *argv[]) {
+void cmd_led(int argc, char *argv[])
+{
     if (argc != 2) {
-        printf("Use: led <on|off>\n");
+        printf("Usage: led <on|off>\r\n");
         return;
     }
 
     if (strcmp(argv[1], "on") == 0) {
-        printf("LED_ON\n");
-        gpio_put(led_pin, true);
+        //gpio_put(LED_PIN, true);
+        led_enable = true;
+        printf("LED ON\r\n");
     } else if (strcmp(argv[1], "off") == 0) {
-        printf("LED_OFF\n");
-        gpio_put(led_pin, false);
+        //gpio_put(LED_PIN, false);
+        led_enable = false;
+        printf("LED OFF\r\n");
     } else {
-        printf("Invalid argument. Use: led <on|off>\n");
+        printf("Invalid argument. Usage: led <on|off>\r\n");
     }
 }
 
+void cmd_echo_mode(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: echo_mode <on|off>\r\n");
+        return;
+    }
+    if (strcmp(argv[1], "on") == 0) {
+        CLI_SetEcho(true);
+        printf("Echo enabled\r\n");
+    } else if (strcmp(argv[1], "off") == 0) {
+        CLI_SetEcho(false);
+        printf("Echo disabled\r\n");
+    } else {
+        printf("Invalid argument. Usage: echo_mode <on|off>\r\n");
+    }
+}
